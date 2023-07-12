@@ -12,4 +12,21 @@ services:
       - ./app:/app # mount the current directory to /app in the container. Permet de ne pas build le conatiner a chauqe fois, notre code est lié au container
     command: >
       sh -c "python manage.py runserver 0.0.0.0:8000"
+    environment:
+      - DB_HOST=db
+      - DB_NAME=devdb
+      - DB_USER=devuser
+      - DB_PASSWORD=changeme
+    depends_on: # permet de dire que le container app dépend du container db. Si db failed, app fail
+      - db
+  db:
+    image: postgres:13-alpine
+    volumes:
+     - dev-db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=devdb
+      - POSTGRES_USER=devuser
+      - POSTGRES_PASSWORD=changeme
 
+volumes:
+  dev-db-data:
