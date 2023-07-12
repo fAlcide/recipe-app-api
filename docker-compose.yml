@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  app:
+    build:
+      context: . # current directory
+      args: # variables d'environnement
+        - DEV=true # variable d'environnement pour le dockerfile si on est en dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app:/app # mount the current directory to /app in the container. Permet de ne pas build le conatiner a chauqe fois, notre code est lié au container
+    command: >
+      sh -c "python manage.py runserver 0.0.0.0:8000"
+
