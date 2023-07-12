@@ -16,7 +16,7 @@ services:
       - DB_HOST=db
       - DB_NAME=devdb
       - DB_USER=devuser
-      - DB_PASSWORD=changeme
+      - DB_PASS=changeme
     depends_on: # permet de dire que le container app dépend du container db. Si db failed, app fail
       - db
   db:
