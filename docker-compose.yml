@@ -11,7 +11,9 @@ services:
     volumes:
       - ./app:/app # mount the current directory to /app in the container. Permet de ne pas build le conatiner a chauqe fois, notre code est lié au container
     command: >
-      sh -c "python manage.py runserver 0.0.0.0:8000"
+      sh -c "python manage.py wait_for_db &&
+             python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
     environment:
       - DB_HOST=db
       - DB_NAME=devdb
