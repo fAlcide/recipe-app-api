@@ -21,10 +21,9 @@ class UserManager(BaseUserManager):
         # creates a new model that we can then modify
         user = self.model(email=self.normalize_email(email), **extra_fields)
         # set_password is a helper function that comes with BaseUserManager
-        user.save(using=self._db)
-        # using=self._db is for supporting multiple databases
         user.set_password(password)
-
+        # using=self._db is for supporting multiple databases
+        user.save(using=self._db)
         return user
 
     def create_superuser(self, email, password=None, **extra_fields):
