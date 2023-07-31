@@ -31,6 +31,11 @@ def details_url(recipe_id):
     return reverse('recipe:recipe-detail', args=[recipe_id])
 
 
+def create_user(**params):
+    """Create and return a new user."""
+    return get_user_model().objects.create_user(**params)
+
+
 # /api/recipe/recipes
 def create_recipe(user, **params):
     """Create and retunr a sample recipe"""
@@ -68,10 +73,7 @@ class PrivateRecipeApiTests(TestCase):
 
     def setUp(self):
         self.client = APIClient()
-        self.user = get_user_model().objects.create_user(
-            'alcide@example.com',
-            'testpass123456'
-        )
+        self.user = create_user(email='user@example.com', password='test123')
 
         # force_authenticate is a helper function that comes with APIClient
         self.client.force_authenticate(self.user)
@@ -115,6 +117,23 @@ class PrivateRecipeApiTests(TestCase):
         serializer = RecipeDetailSerializer(recipe)
         self.assertEqual(res.data, serializer.data)
 
+    def test_create_basic_recipe(self):
+        """Test creating recipe"""
+        payload = {
+            'title': 'Chocolate_cake',
+            'time_minutes': 30,
+            'price': Decimal('5.00'),
+        }
+
+        res = self.client.post(RECIPES_URL, payload, format='json')
+
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+
+        recipe = Recipe.objects.get(id=res.data['id'])
+        for k, v in payload.items():
+            self.assertEqual(getattr(recipe, k), v)
+        self.assertEqual(recipe.user, self.user)
+
     def test_create_recipe_with_new_tags(self):
         """Test creating a recipe with new tags"""
         payload = {
@@ -131,32 +150,32 @@ class PrivateRecipeApiTests(TestCase):
         self.assertEqual(recipes.count(), 1)
         recipe = recipes[0]
         self.assertEqual(recipe.tags.count(), 2)
-        for tag in payload:
+        for tag in payload['tags']:
             exists = recipe.tags.filter(
                 name=tag['name'],
                 user=self.user
             ).exists()
             self.assertTrue(exists)
 
-    # def test_create_recipe_with_existing_tag(self):
-    #     """Test creating a recipe with existing tag"""
-    #     tag1 = Tag.objects.create(user=self.user, name="Protein")
-    #     payload = {
-    #         "title": "Chocolate cheesecake",
-    #         "tags": [{"name": tag1.name}, {"name": "Malin"}],
-    #         "time_minutes": 30,
-    #         "price": 5.00
-    #     }
-    #     res = self.client.post(RECIPES_URL, payload, format='json')
-    #     self.assertEqual(res.status_code, status.HTTP_201_CREATED)
-    #     recipes = Recipe.objects.filter(user=self.user)
-    #     self.assertEqual(recipes.count(), 1)
-    #     recipe = recipes[0]
-    #     self.assertEqual(recipe.tags.count(), 2)
-    #     self.assertIn(tag1, recipe.tags.all())
-    #     for tag in payload["tags"]:
-    #         exists = recipe.tags.filter(
-    #             name=tag["name"],
-    #             user=self.user
-    #         ).exists()
-    #         self.assertTrue(exists)
+    def test_create_recipe_with_existing_tag(self):
+        """Test creating a recipe with existing tag"""
+        tag1 = Tag.objects.create(user=self.user, name="Protein")
+        payload = {
+            "title": "Chocolate cheesecake",
+            "tags": [{"name": tag1.name}, {"name": "Malin"}],
+            "time_minutes": 30,
+            "price": 5.00
+        }
+        res = self.client.post(RECIPES_URL, payload, format='json')
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        recipes = Recipe.objects.filter(user=self.user)
+        self.assertEqual(recipes.count(), 1)
+        recipe = recipes[0]
+        self.assertEqual(recipe.tags.count(), 2)
+        self.assertIn(tag1, recipe.tags.all())
+        for tag in payload["tags"]:
+            exists = recipe.tags.filter(
+                name=tag["name"],
+                user=self.user
+            ).exists()
+            self.assertTrue(exists)
