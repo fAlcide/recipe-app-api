@@ -65,7 +65,21 @@ class Recipe(models.Model):
     time_minutes = models.IntegerField()
     price = models.DecimalField(decimal_places=2, max_digits=5)
     link = models.CharField(max_length=255, blank=True)
+    tags = models.ManyToManyField('Tag', blank=True)
 
     def __str__(self):
         """Return the string representation of the model"""
         return self.title
+
+
+class Tag(models.Model):
+    """Tag to be used for a recipe"""
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+    )
+    name = models.CharField(max_length=255)
+
+    # this is how to make a model return a string
+    def __str__(self):
+        return self.name
