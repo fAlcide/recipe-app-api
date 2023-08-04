@@ -112,7 +112,7 @@ class PrivateRecipeApiTests(TestCase):
 
         res = self.client.get(RECIPES_URL)
 
-        recipes = Recipe.objects.all().order_by('id')
+        recipes = Recipe.objects.all().order_by('-id')
         serializer = RecipeSerializer(recipes, many=True)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
@@ -423,6 +423,56 @@ class PrivateRecipeApiTests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertNotIn(ingredient1, recipe.ingredients.all())
         self.assertNotIn(ingredient2, recipe.ingredients.all())
+
+    def test_filter_by_tags(self):
+        """Test filterring recipes by tags"""
+        r1 = create_recipe(user=self.user, title="Thai vegetable curry")
+        r2 = create_recipe(user=self.user, title="Aubergine with tahini")
+        tag1 = Tag.objects.create(user=self.user, name="Vegan")
+        tag2 = Tag.objects.create(user=self.user, name="Vegetarian")
+        r1.tags.add(tag1)
+        r2.tags.add(tag2)
+        r3 = create_recipe(user=self.user, title="Fish and chips")
+
+        prarams = {'tags': f'{tag1.id},{tag2.id}'}
+        res = self.client.get(RECIPES_URL, prarams)
+
+        s1 = RecipeSerializer(r1)
+        s2 = RecipeSerializer(r2)
+        s3 = RecipeSerializer(r3)
+
+        # check if the response contains the correct data
+        self.assertIn(s1.data, res.data)
+        self.assertIn(s2.data, res.data)
+        self.assertNotIn(s3.data, res.data)
+
+    def test_filter_by_ingredients(self):
+        """Test filterring recipes by ingredients"""
+        r1 = create_recipe(user=self.user, title="Posh beans on toast")
+        r2 = create_recipe(user=self.user, title="Chicken cacciatore")
+        ingredient1 = Ingredient.objects.create(
+            user=self.user,
+            name="Feta cheese"
+            )
+        ingredient2 = Ingredient.objects.create(
+            user=self.user,
+            name="Chicken"
+            )
+        r1.ingredients.add(ingredient1)
+        r2.ingredients.add(ingredient2)
+        r3 = create_recipe(user=self.user, title="Steak and mushrooms")
+
+        prarams = {'ingredients': f'{ingredient1.id},{ingredient2.id}'}
+        res = self.client.get(RECIPES_URL, prarams)
+
+        s1 = RecipeSerializer(r1)
+        s2 = RecipeSerializer(r2)
+        s3 = RecipeSerializer(r3)
+
+        # check if the response contains the correct data
+        self.assertIn(s1.data, res.data)
+        self.assertIn(s2.data, res.data)
+        self.assertNotIn(s3.data, res.data)
 
 
 class imageUploadTest(TestCase):
